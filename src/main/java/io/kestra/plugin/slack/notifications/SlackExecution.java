@@ -44,14 +44,10 @@ import lombok.experimental.SuperBuilder;
                 triggers:
                   - id: failed_prod_workflows
                     type: io.kestra.plugin.core.trigger.Flow
-                    conditions:
-                      - type: io.kestra.plugin.core.condition.ExecutionStatus
-                        in:
-                          - FAILED
-                          - WARNING
-                      - type: io.kestra.plugin.core.condition.ExecutionNamespace
-                        namespace: prod
-                        prefix: true
+                    states:
+                      - FAILED
+                      - WARNING
+                    when: "{{ flow.namespace | startsWith('prod') }}"
                 """
         ),
         @Example(
@@ -73,14 +69,10 @@ import lombok.experimental.SuperBuilder;
                 triggers:
                   - id: failed_prod_workflows
                     type: io.kestra.plugin.core.trigger.Flow
-                    conditions:
-                      - type: io.kestra.plugin.core.condition.ExecutionStatus
-                        in:
-                          - FAILED
-                          - WARNING
-                      - type: io.kestra.plugin.core.condition.ExecutionNamespace
-                        namespace: debug
-                        prefix: true
+                    states:
+                      - FAILED
+                      - WARNING
+                    when: "{{ flow.namespace | startsWith('debug') }}"
                 """
         )
     },

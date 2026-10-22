@@ -78,10 +78,6 @@ import reactor.core.publisher.Mono;
                     key: "{{ secret('SLACK_WEBHOOK_KEY') }}"
                     botToken: "{{ secret('SLACK_BOT_TOKEN') }}"
                     signingSecret: "{{ secret('SLACK_SIGNING_SECRET') }}"
-                    conditions:
-                      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
-                        namespace: company.team
-                        flowId: slack_message_trigger
 
                 tasks:
                   - id: log_event
@@ -257,7 +253,7 @@ public class Trigger extends AbstractWebhookTrigger implements TriggerOutput<Tri
         if (maybeExecution.isEmpty()) {
             return slackContext.ack();
         } else {
-                context.webhookService().startExecution(maybeExecution.get()).subscribe();
+            context.webhookService().startExecution(maybeExecution.get()).subscribe();
 
             try {
                 WebhookResponse webhookResponse = context.webhookService().executionResponse(maybeExecution.get());
