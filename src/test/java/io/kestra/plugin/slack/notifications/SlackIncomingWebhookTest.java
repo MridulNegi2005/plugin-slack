@@ -2,6 +2,7 @@ package io.kestra.plugin.slack.notifications;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,10 +14,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.flows.Flow;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.validations.ModelValidator;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.serializers.YamlParser;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.slack.AbstractSlackWebhookConnection;
 import io.kestra.plugin.slack.FakeWebhookController;
 
@@ -35,6 +40,9 @@ class SlackIncomingWebhookTest {
 
     @Inject
     private RunContextFactory runContextFactory;
+
+    @Inject
+    private ModelValidator modelValidator;
 
     @Test
     void run() throws Exception {
@@ -236,5 +244,41 @@ class SlackIncomingWebhookTest {
         );
 
         assertThat(thrown.getMessage()).contains("Unrecognized token");
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void flowSettingDeprecatedOptionsStillValidatesAndRuns() throws Exception {
+        var embeddedServer = applicationContext.getBean(EmbeddedServer.class);
+        embeddedServer.start();
+
+        var message = "deprecated-options-" + IdUtils.create();
+        var flow = YamlParser.parse(
+            """
+                id: slack_deprecated_options
+                namespace: io.kestra.tests
+                tasks:
+                  - id: webhook
+                    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
+                    url: "%s/webhook-unit-test"
+                    messageText: "%s"
+                    options:
+                      connectionPoolIdleTimeout: PT10S
+                      maxContentLength: 1024
+                """.formatted(embeddedServer.getURI(), message),
+            Flow.class
+        );
+
+        assertThat(modelValidator.isValid(flow)).isEmpty();
+
+        var runContext = runContextFactory.of(Map.of());
+        var task = (SlackIncomingWebhook) flow.getTasks().getFirst();
+        var options = task.getOptions();
+        assertThat(runContext.render(options.getConnectionPoolIdleTimeout()).as(Duration.class).orElseThrow()).isEqualTo(Duration.ofSeconds(10));
+        assertThat(runContext.render(options.getMaxContentLength()).as(Integer.class).orElseThrow()).isEqualTo(1024);
+
+        task.run(runContext);
+
+        assertThat(FakeWebhookController.data).contains(message);
     }
 }

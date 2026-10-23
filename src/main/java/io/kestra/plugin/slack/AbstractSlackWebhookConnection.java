@@ -14,6 +14,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,14 +57,26 @@ public abstract class AbstractSlackWebhookConnection extends Task implements Run
         @PluginProperty(group = "execution")
         private final Property<Duration> readIdleTimeout = Property.ofValue(Duration.of(5, ChronoUnit.MINUTES));
 
-        @Schema(title = "The time an idle connection can remain in the client's connection pool before being closed")
+        @Deprecated
+        @Schema(
+            title = "The time an idle connection can remain in the client's connection pool before being closed",
+            description = """
+                Deprecated, this option has no effect: the Slack webhook task does not apply a connection pool idle timeout.
+                """
+        )
         @Builder.Default
-        @PluginProperty(group = "execution")
+        @PluginProperty(group = "deprecated")
         private final Property<Duration> connectionPoolIdleTimeout = Property.ofValue(Duration.ofSeconds(0));
 
-        @Schema(title = "The maximum content length of the response")
+        @Deprecated
+        @Schema(
+            title = "The maximum content length of the response",
+            description = """
+                Deprecated, this option has no effect: the Slack webhook task does not limit the response size.
+                """
+        )
         @Builder.Default
-        @PluginProperty(group = "execution")
+        @PluginProperty(group = "deprecated")
         private final Property<Integer> maxContentLength = Property.ofValue(1024 * 1024 * 10);
 
         @Schema(title = "The default charset for the request")
@@ -144,7 +157,7 @@ public abstract class AbstractSlackWebhookConnection extends Task implements Run
     /**
      * Applies any configured proxy settings to the given OkHttpClient.Builder.
      *
-     * @param builder    the OkHttpClient builder to configure
+     * @param builder the OkHttpClient builder to configure
      * @param runContext the run context used to render Property values
      * @throws Exception if property rendering fails
      */
@@ -173,7 +186,8 @@ public abstract class AbstractSlackWebhookConnection extends Task implements Run
         String rPassword = runContext.render(proxyOptions.getPassword()).as(String.class).orElse(null);
 
         if (rUsername != null && rPassword != null) {
-            Authenticator proxyAuthenticator = (route, response) -> {
+            Authenticator proxyAuthenticator = (route, response) ->
+            {
                 if (response.request().header("Proxy-Authorization") != null) {
                     return null;
                 }
