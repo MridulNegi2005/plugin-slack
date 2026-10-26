@@ -18,16 +18,18 @@ public class MessageService {
             String rMessageText = runContext.render(messageText).as(String.class).orElseThrow();
 
             try {
-                // first we try as Json for more flexibility
-                Object jsonNode = JacksonMapper.ofJson().readTree(rMessageText);
-                return JacksonMapper.ofJson().writeValueAsString(jsonNode);
+                var jsonNode = JacksonMapper.ofJson().readTree(rMessageText);
+                if (jsonNode.isObject()) {
+                    return JacksonMapper.ofJson().writeValueAsString(jsonNode);
+                }
             } catch (Exception e) {
-                // not valid Json, so proceed with markdown text
-                String rMessageTextMrkdwn = toSlackMrkdwn(rMessageText);
-                return JacksonMapper.ofJson().writeValueAsString(
-                    JacksonMapper.ofJson().createObjectNode().put("text", rMessageTextMrkdwn)
-                );
+                // Invalid JSON falls back to markdown text.
             }
+
+            String rMessageTextMrkdwn = toSlackMrkdwn(rMessageText);
+            return JacksonMapper.ofJson().writeValueAsString(
+                JacksonMapper.ofJson().createObjectNode().put("text", rMessageTextMrkdwn)
+            );
         }
 
         throw new IllegalArgumentException("Either 'messageText' or 'payload' must be provided");
