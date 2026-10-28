@@ -2,6 +2,8 @@ package io.kestra.plugin.slack.services;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -18,7 +20,7 @@ public class MessageService {
             String rMessageText = runContext.render(messageText).as(String.class).orElseThrow();
 
             try {
-                var jsonNode = JacksonMapper.ofJson().readTree(rMessageText);
+                var jsonNode = JacksonMapper.ofJson().reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readTree(rMessageText);
                 if (jsonNode.isObject()) {
                     return JacksonMapper.ofJson().writeValueAsString(jsonNode);
                 }

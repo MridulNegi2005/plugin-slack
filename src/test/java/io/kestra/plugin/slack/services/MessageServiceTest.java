@@ -34,6 +34,26 @@ class MessageServiceTest {
     }
 
     @Test
+    void shouldWrapTextThatOnlyStartsWithJson() {
+        assertAll(Stream.of(
+            "3 SEC ratio alert(s):\n• WMT (Walmart Inc.), quarter ended 2026-07-31: current ratio 0.77 is below the minimum of 1.00",
+            "true story",
+            "null and void",
+            "\"quoted\" text",
+            "{\"text\": \"hi\"} and some notes"
+        ).map(messageText -> () ->
+        {
+            String json = MessageService.prepareMessageAsJson(runContextFactory.of(), null, Property.ofValue(messageText));
+
+            assertThat(json).as("messageText: %s", messageText).isEqualTo(
+                JacksonMapper.ofJson().writeValueAsString(
+                    JacksonMapper.ofJson().createObjectNode().put("text", messageText)
+                )
+            );
+        }));
+    }
+
+    @Test
     void shouldPreserveJsonObject() throws Exception {
         String messageText = "{\"text\":\"**bold**\",\"blocks\":[]}";
 
