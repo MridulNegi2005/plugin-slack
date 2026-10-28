@@ -40,7 +40,12 @@ class MessageServiceTest {
             "true story",
             "null and void",
             "\"quoted\" text",
-            "{\"text\": \"hi\"} and some notes"
+            "{\"text\": \"hi\"} and some notes",
+            "{\"text\": \"hi\"}{\"text\": \"again\"}",
+            "{\"text\": \"unterminated\"",
+            "{'text': 'single quotes'}",
+            "",
+            "   "
         ).map(messageText -> () ->
         {
             String json = MessageService.prepareMessageAsJson(runContextFactory.of(), null, Property.ofValue(messageText));
@@ -51,6 +56,13 @@ class MessageServiceTest {
                 )
             );
         }));
+    }
+
+    @Test
+    void shouldPreserveJsonObjectSurroundedByWhitespace() throws Exception {
+        String json = MessageService.prepareMessageAsJson(runContextFactory.of(), null, Property.ofValue("  {\"text\": \"hi\"}\n"));
+
+        assertThat(json).isEqualTo("{\"text\":\"hi\"}");
     }
 
     @Test
