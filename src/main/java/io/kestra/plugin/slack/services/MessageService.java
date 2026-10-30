@@ -2,6 +2,7 @@ package io.kestra.plugin.slack.services;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import io.kestra.core.models.property.Property;
@@ -24,11 +25,11 @@ public class MessageService {
                 if (jsonNode.isObject()) {
                     return JacksonMapper.ofJson().writeValueAsString(jsonNode);
                 }
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 // Invalid JSON falls back to markdown text.
             }
 
-            String rMessageTextMrkdwn = toSlackMrkdwn(rMessageText);
+            var rMessageTextMrkdwn = toSlackMrkdwn(rMessageText);
             return JacksonMapper.ofJson().writeValueAsString(
                 JacksonMapper.ofJson().createObjectNode().put("text", rMessageTextMrkdwn)
             );
